@@ -48,17 +48,17 @@ node "server" {
   katello -down..> candlepin : localhost:8443
   katello -down..> pulp_server_api : hostname:443
   katello -down..> elasticsearch : localhost:9200
-  katello ..> qpidd_server : hostname:5671
+  katello .[#blue,bold].> qpidd_server : hostname:5671 [3]
 
-  qdrouterd_server ..> qpidd_server : localhost:5671
+  qdrouterd_server .[#orange,bold].> qpidd_server : localhost:5671
 
   pulp_server_api ..> mongo_server : localhost:27017
-  pulp_server_api ..> qpidd_server : hostname:5671
+  pulp_server_api .[#blue,bold].> qpidd_server : hostname:5671 [2]
 
   pulp_server_backend ..> mongo_server : localhost:27017
-  pulp_server_backend ..> qpidd_server : hostname:5671
+  pulp_server_backend .[#blue,bold].> qpidd_server : hostname:5671 [0, 1]
 
-  candlepin ..> qpidd_server : hostname:5671
+  candlepin .[#blue,bold].> qpidd_server : hostname:5671 [4]
 
   foreman <..> puppet_master
 }
@@ -77,14 +77,14 @@ node "Capsule" {
   [MongoDB] as mongo_capsule
   [Dispatch Router] as qdrouterd_capsule
 
-  smart_proxy -[#green]-> foreman : 443
+  smart_proxy --> foreman : 443
   smart_proxy_apache ..> smart_proxy
 
   pulp_capsule_api ..> mongo_capsule : localhost:27017
-  pulp_capsule_api ..> qpidd_capsule : hostname:5671
+  pulp_capsule_api .[#blue,bold].> qpidd_capsule : hostname:5671 [2]
 
   pulp_capsule_backend ..> mongo_capsule : localhost:27017
-  pulp_capsule_backend ..> qpidd_capsule : hostname:5671
+  pulp_capsule_backend .[#blue,bold].> qpidd_capsule : hostname:5671 [0, 1]
 }
 
 node "Client" {
@@ -103,10 +103,10 @@ node "Isolated Client" {
 
 smart_proxy_apache ..> server_apache : 443
 
-isolated_rhsm -[#green]-> smart_proxy_apache : 8443
-isolated_yum -[#green]-> smart_proxy_apache : 443
-isolated_yum -[#red]..> smart_proxy_apache : 80
-isolated_katello_agent -[#green]-> qdrouterd_capsule : 5647
+isolated_rhsm --> smart_proxy_apache : 8443
+isolated_yum --> smart_proxy_apache : 443
+isolated_yum ..> smart_proxy_apache : 80
+isolated_katello_agent -[#orange,bold]-> qdrouterd_capsule : 5647
 isolated_puppet ..> smart_proxy_apache : 443
 
 browser ..> server_apache : 80
@@ -114,11 +114,11 @@ browser ..> server_apache : 443
 rhsm ..> server_apache : 443
 yum ..> server_apache : 443
 yum ..> server_apache : 80
-katello_agent -[#green]-> qdrouterd_server : 5647
+katello_agent -[#orange,bold]-> qdrouterd_server : 5647
 
 katello ..> pulp_capsule_api
 
-qdrouterd_capsule ..> qdrouterd_server : hostname:5646
+qdrouterd_capsule .[#orange,bold].> qdrouterd_server : hostname:5646
 
 foreman ..> smart_proxy_apache : 9090
 
@@ -126,10 +126,8 @@ puppet <..> puppet_master : 443
 isolated_puppet <..> smart_proxy_puppet_master : 443
 
 legend right
-  (Green) -> SSL two-way
-  (Orange) -> SSL one-way
-  (Cyan) -> SSL no cert validation
-  (Red) ..> no SSL
+  Needs to be ported to AMQP 1.0 (Blue)
+  Already running AMQP 1.0 (Orange)
 endlegend
 
 @enduml
