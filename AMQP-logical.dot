@@ -1,0 +1,64 @@
+@startuml
+
+cloud "AMQP Network" {
+  cloud "qpidd Queues sat6.example.com" {
+    cloud "Pulp queues" as sat6_pulp {
+      [pulp.task] as sat6_pulp_task_queue
+      [reserved_resource_worker-N@sat6.example.com.dq] as sat6_worker_n_queue
+      [resource_manager] as sat6_resource_manager_queue
+      [pulp.agent.494abe0c-cfb6-40f0-9031-9a1b8456cda2] as sat6_agent_queue
+      [pulp.agent.c1cbd8e3-eb36-41ed-baee-f60c24cffa5a] as capsule_agent_queue
+    }
+  }
+
+  cloud "qpidd Queues capsule01.example.com" {
+    cloud "Pulp queues" as capsule_pulp {
+      [reserved_resource_worker-N@capsule01.example.com.dq] as capsule_worker_n_queue
+      [resource_manager] as capsule_resource_manager_queue
+    }
+  }
+}
+
+[consumer registered to capsule] as capsule_agent
+capsule_agent_queue -[#red,bold]down-> capsule_agent
+capsule_agent -[#red,bold]up-> sat6_pulp_task_queue
+
+[consumer registered to sat6] as sat6_agent
+sat6_agent_queue -[#red,bold]down-> sat6_agent
+sat6_agent -[#red,bold]up-> sat6_pulp_task_queue
+
+[httpd] as sat6_httpd
+sat6_httpd -[#red,bold]-> sat6_agent_queue
+sat6_httpd -[#red,bold]-> capsule_agent_queue
+sat6_pulp_task_queue -[#red,bold]-> sat6_httpd
+sat6_httpd -[#blue,bold]-> sat6_resource_manager_queue
+
+[httpd] as capsule_httpd
+capsule_httpd -[#blue,bold]-> capsule_resource_manager_queue
+
+[reserved_resource_worker-N] as capsule_worker_n
+capsule_worker_n_queue -[#blue,bold]-> capsule_worker_n
+
+[reserved_resource_worker-N] as sat6_worker_n
+sat6_worker_n_queue -[#blue,bold]-> sat6_worker_n
+
+[celerybeat] as sat6_celerybeat
+sat6_celerybeat -[#blue,bold]-> sat6_resource_manager_queue
+
+[celerybeat] as capsule_celerybeat
+capsule_celerybeat -[#blue,bold]-> capsule_resource_manager_queue
+
+[resource_manager] as sat6_resource_manager
+sat6_resource_manager_queue -[#blue,bold]down-> sat6_resource_manager
+sat6_resource_manager -[#blue,bold]up-> sat6_worker_n_queue
+
+[resource_manager] as capsule_resource_manager
+capsule_resource_manager_queue -[#blue,bold]down-> capsule_resource_manager
+capsule_resource_manager -[#blue,bold]up-> capsule_worker_n_queue
+
+legend right
+  Pulp Tasks (Blue) (AMQP 0-10) qpid.messaging, qpidtoollibs
+  Consumer Actions and Replies (Red) (AMQP 1.0) proton
+endlegend
+
+@enduml

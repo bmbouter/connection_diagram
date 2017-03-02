@@ -1,0 +1,67 @@
+@startuml
+
+node "sat6.example.com" {
+  [Candlepin] as candlepin
+
+  node "Pulp" as pulp_server {
+    [API] as pulp_server_api
+    [pulp_* processes] as pulp_server_backend
+  }
+
+  [Qpid] as qpidd_server
+  [Dispatch Router] as qdrouterd_server
+
+  node "Foreman Application" {
+    [Katello] as katello
+  }
+
+  katello .[#blue,bold].> qpidd_server : localhost:5671
+
+  qdrouterd_server .[#orange,bold].> qpidd_server : localhost:5671
+
+  pulp_server_api .[#blue,bold].> qpidd_server : localhost:5671
+  pulp_server_api .[#orange,bold].> qpidd_server : localhost:5671
+
+  pulp_server_backend .[#blue,bold].> qpidd_server : localhost:5671
+
+  candlepin .[#blue,bold].> qpidd_server : localhost:5671
+
+}
+
+node "capsule01.example.com" {
+
+  node "Pulp" as pulp_capsule {
+    [API] as pulp_capsule_api
+    [pulp_* process] as pulp_capsule_backend
+  }
+
+  [Qpid] as qpidd_capsule
+  [Dispatch Router] as qdrouterd_capsule
+
+  pulp_capsule_api .[#blue,bold].> qpidd_capsule : localhost:5671
+  pulp_capsule_api .[#orange,bold].> qpidd_capsule : localhost:5671
+
+  pulp_capsule_backend .[#blue,bold].> qpidd_capsule : localhost:5671
+
+}
+
+node "Client" {
+  [Katello Agent] as katello_agent
+}
+
+node "Isolated Client" {
+  [Isolated Katello Agent] as isolated_katello_agent
+}
+
+isolated_katello_agent -[#orange,bold]up-> qdrouterd_capsule : capsule01.example.com:5647
+
+katello_agent -[#orange,bold]-> qdrouterd_server : sat6.example.com:5647
+
+qdrouterd_capsule .[#orange,bold]up.> qdrouterd_server : sat6.example.com:5647
+
+legend right
+  Needs to be ported to AMQP 1.0 (Blue)
+  Already running AMQP 1.0 (Orange)
+endlegend
+
+@enduml
