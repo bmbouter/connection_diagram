@@ -57,7 +57,7 @@ isolated_katello_agent -[#orange,bold]up-> qdrouterd_capsule : capsule01.example
 
 katello_agent -[#orange,bold]-> qdrouterd_server : sat6.example.com:5647
 
-qdrouterd_capsule .[#orange,bold]up.> qdrouterd_server : sat6.example.com:5647
+qdrouterd_capsule .[#orange,bold]up.> qdrouterd_server : sat6.example.com:5646
 
 legend right
   Needs to be ported to AMQP 1.0 (Blue)

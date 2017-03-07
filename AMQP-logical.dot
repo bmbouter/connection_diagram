@@ -1,21 +1,30 @@
 @startuml
 
-cloud "AMQP Network" {
-  cloud "qpidd Queues sat6.example.com" {
-    cloud "Pulp queues" as sat6_pulp {
-      [pulp.task] as sat6_pulp_task_queue
-      [reserved_resource_worker-N@sat6.example.com.dq] as sat6_worker_n_queue
-      [resource_manager] as sat6_resource_manager_queue
-      [pulp.agent.494abe0c-cfb6-40f0-9031-9a1b8456cda2] as sat6_agent_queue
-      [pulp.agent.c1cbd8e3-eb36-41ed-baee-f60c24cffa5a] as capsule_agent_queue
-    }
-  }
+title "AMQP Network"
 
-  cloud "qpidd Queues capsule01.example.com" {
-    cloud "Pulp queues" as capsule_pulp {
-      [reserved_resource_worker-N@capsule01.example.com.dq] as capsule_worker_n_queue
-      [resource_manager] as capsule_resource_manager_queue
+cloud "qpidd Queues sat6.example.com" {
+  cloud "Pulp queues" as sat6_pulp {
+    [pulp.task] as sat6_pulp_task_queue
+    [reserved_resource_worker-N@sat6.example.com.dq] as sat6_worker_n_queue
+    [resource_manager] as sat6_resource_manager_queue
+    [pulp.agent.494abe0c-cfb6-40f0-9031-9a1b8456cda2] as sat6_agent_queue
+    [pulp.agent.c1cbd8e3-eb36-41ed-baee-f60c24cffa5a] as capsule_agent_queue
+  }
+}
+
+cloud "candlepin events" {
+    cloud "Katello Queues" {
+      [katello_event_queue] as katello_event_queue
     }
+    cloud "Candlepin exchanges" {
+      [event] as event_exchange
+    }
+}
+
+cloud "qpidd Queues capsule01.example.com" {
+  cloud "Pulp queues" as capsule_pulp {
+    [reserved_resource_worker-N@capsule01.example.com.dq] as capsule_worker_n_queue
+    [resource_manager] as capsule_resource_manager_queue
   }
 }
 
@@ -56,9 +65,18 @@ sat6_resource_manager -[#blue,bold]up-> sat6_worker_n_queue
 capsule_resource_manager_queue -[#blue,bold]down-> capsule_resource_manager
 capsule_resource_manager -[#blue,bold]up-> capsule_worker_n_queue
 
+[foreman-tasks] as foreman_tasks_event_listener
+katello_event_queue -[#orange,bold]down-> foreman_tasks_event_listener
+
+[candlepin] as candlepin
+candlepin -[#orange,bold]down-> event_exchange
+
+event_exchange -[#orange,bold]down-> katello_event_queue
+
 legend right
   Pulp Tasks (Blue) (AMQP 0-10) qpid.messaging, qpidtoollibs
   Consumer Actions and Replies (Red) (AMQP 1.0) proton
+  Candlepin Events (Orange), qpid-messaging rubygem, (jar???)
 endlegend
 
 @enduml
